@@ -1,21 +1,24 @@
-Xeno Marketing Platform – API Reference
+# Xeno Marketing Platform API Reference
 
-Environment: Development
-Base Endpoint: http://localhost:3000/api
- Authentication
+This reference outlines all available endpoints provided by the Xeno Marketing Platform.
 
-All API interactions are secured using OAuth 2.0 protocol. Ensure proper token handling and renewal logic is in place before making requests.
- User Operations
- Add or Update Customer Info
+**Base URL**: `http://localhost:3000/api` (Development Environment)
 
-    HTTP Method: POST
+## Authentication
 
-    Route: /user
+OAuth2.0 handles all authentication flows.
 
-    Purpose: Submit new customer information or update existing details in the database.
+# API Endpoints
 
-Payload (JSON format):
+## 1. Customer Management
 
+### 1.1. Submit Customer Information
+
+* **Endpoint**: `POST /user`
+* **Purpose**: Inserts or updates customer records.
+* **Content-Type**: `application/json`
+
+```json
 {
   "name": "John Doe",
   "email": "john.doe@example.com",
@@ -28,19 +31,18 @@ Payload (JSON format):
     "country": "USA"
   }
 }
+```
 
-Field Descriptions:
+* **Fields**:
 
-    name (string): Customer's full name.
+  * `name` (string): Required. Full name.
+  * `email` (string): Required. Unique email.
+  * `phone` (string): Required. Contact number.
+  * `address` (object): Required. Complete address.
 
-    email (string): Must be unique. Email address of the user.
+* **Success (201 Created)**:
 
-    phone (string): Contact number.
-
-    address (object): Must include street, city, state, zipCode, and country.
-
-Success Response (201):
-
+```json
 {
   "success": true,
   "message": "User data ingested successfully.",
@@ -49,7 +51,7 @@ Success Response (201):
     "name": "John Doe",
     "email": "john.doe@example.com",
     "phone": "123-456-7890",
-    "createdAt": "timestamp",
+    "createdAt": "iso-timestamp",
     "address": {
       "userId": "generated-uuid",
       "street": "123 Main St",
@@ -60,9 +62,11 @@ Success Response (201):
     }
   }
 }
+```
 
-Failure Response (400 - Validation Issue):
+* **Failure (400 Bad Request)**:
 
+```json
 {
   "success": false,
   "error": "Invalid user data provided.",
@@ -70,18 +74,19 @@ Failure Response (400 - Validation Issue):
     "email": ["Invalid email format"]
   }
 }
+```
 
- Order Operations
- Submit an Order
+---
 
-    HTTP Method: POST
+## 2. Order Processing
 
-    Route: /order
+### 2.1. Submit Order
 
-    Function: Records a purchase made by a customer. The customerId must already exist in the system.
+* **Endpoint**: `POST /order`
+* **Purpose**: Adds a new order tied to an existing customer.
+* **Content-Type**: `application/json`
 
-Request Body Example:
-
+```json
 {
   "customerId": "customer-uuid",
   "items": [
@@ -97,17 +102,19 @@ Request Body Example:
   "currency": "USD",
   "status": "delivered"
 }
+```
 
-Important Fields:
+* **Fields**:
 
-    items must contain valid productId, name, price (in cents), quantity, and calculated total.
+  * `customerId` (UUID): Required.
+  * `items` (array): Required. Includes product line details.
+  * `totalAmount` (int): Required. In cents.
+  * `currency` (string): Required. Currency code.
+  * `status` (string): Required. Current order status.
 
-    totalAmount is the sum of item totals.
+* **Success (201 Created)**:
 
-    status supports values like processing, shipped, delivered.
-
-Success (201 Created):
-
+```json
 {
   "success": true,
   "message": "Order data ingested successfully.",
@@ -117,7 +124,7 @@ Success (201 Created):
     "totalAmount": 5000,
     "currency": "USD",
     "status": "delivered",
-    "createdAt": "timestamp",
+    "createdAt": "iso-timestamp",
     "items": [
       {
         "id": "generated-item-uuid",
@@ -131,129 +138,153 @@ Success (201 Created):
     ]
   }
 }
+```
 
-Error (404 - Customer Not Found):
+* **Failure (404 Not Found)**:
 
+```json
 {
   "success": false,
   "error": "Customer with ID customer-uuid not found."
 }
+```
 
- Segmentation Engine
- Preview Audience by Rules
+---
 
-    Endpoint: POST /segments/preview
+## 3. Audience Segments
 
-    Use Case: Simulates segmentation rules to estimate audience size without creating a segment.
+### 3.1. Simulate Segment Audience
 
-Input Format:
+* **Endpoint**: `POST /segments/preview`
+* **Purpose**: Estimates audience size using given rules, without saving.
+* **Content-Type**: `application/json`
 
+```json
 {
   "rules": {
     "groups": [
       {
         "conditions": [
-          { "field": "totalSpend", "operator": "greaterThan", "value": 10000 },
-          { "field": "state", "operator": "equals", "value": "CA" }
+          {"field": "totalSpend", "operator": "greaterThan", "value": 10000},
+          {"field": "state", "operator": "equals", "value": "CA"}
         ]
       },
       {
         "conditions": [
-          { "field": "orderCount", "operator": "greaterThanOrEqual", "value": 5 }
+          {"field": "orderCount", "operator": "greaterThanOrEqual", "value": 5}
         ]
       }
     ]
   }
 }
+```
 
-Success Output (200 OK):
+* **Success (200 OK)**:
 
+```json
 {
   "success": true,
   "data": {
     "audienceSize": 150,
-    "sampleUserIds": ["user-uuid-1", "user-uuid-2"]
+    "sampleUserIds": ["user-uuid-1", "user-uuid-2", "..."]
   }
 }
+```
 
- Save New Segment
+### 3.2. Save Segment
 
-    Route: POST /segments
+* **Endpoint**: `POST /segments`
+* **Purpose**: Creates a new segment.
 
-    Purpose: Persists a new segment based on provided conditions.
-
-Example Request:
-
+```json
 {
   "name": "High Value CA Customers",
   "rules": {
     "groups": [
       {
         "conditions": [
-          { "field": "totalSpend", "operator": "greaterThan", "value": 10000 },
-          { "field": "state", "operator": "equals", "value": "CA" }
+          {"field": "totalSpend", "operator": "greaterThan", "value": 10000},
+          {"field": "state", "operator": "equals", "value": "CA"}
         ]
       }
     ]
   }
 }
+```
 
-On Success (201):
+* **Success (201 Created)**:
 
+```json
 {
   "success": true,
   "message": "Segment \"High Value CA Customers\" created successfully.",
   "data": {
-    "id": "segment-uuid",
+    "id": "generated-segment-uuid",
     "name": "High Value CA Customers",
-    "rules": { /* same as input */ },
+    "rules": { /* rules */ },
     "audienceUserIds": ["..."],
-    "createdAt": "timestamp",
-    "updatedAt": "timestamp"
+    "createdAt": "iso-timestamp",
+    "updatedAt": "iso-timestamp"
   }
 }
+```
 
- List Segments
+### 3.3. Retrieve All Segments
 
-    Method: GET
+* **Endpoint**: `GET /segments`
 
-    Endpoint: /segments
+* **Purpose**: Fetches every saved segment sorted by newest first.
 
-    Returns: All stored segments sorted by newest first.
+* **Success (200 OK)**:
 
-Response Example:
-
+```json
 {
   "success": true,
   "data": [
     {
       "id": "segment-uuid-1",
       "name": "High Value CA Customers",
-      "rules": { /* rule config */ },
+      "rules": { /* rules */ },
       "audienceUserIds": ["..."],
-      "createdAt": "timestamp",
-      "updatedAt": "timestamp"
+      "createdAt": "iso-timestamp",
+      "updatedAt": "iso-timestamp"
     }
   ]
 }
+```
 
- View Single Segment
+### 3.4. Fetch Segment Details
 
-    Endpoint: GET /segments/:segmentId
+* **Endpoint**: `GET /segments/:segmentId`
 
-    Input Param: segmentId (UUID)
+* **Purpose**: Get full data for a single segment.
 
-    Use: Retrieve full information of a specific segment.
+* **Success (200 OK)**:
 
- Campaign Operations
- Launch Campaign with Segment
+```json
+{
+  "success": true,
+  "data": {
+    "id": "segment-uuid-1",
+    "name": "High Value CA Customers",
+    "rules": { /* rules */ },
+    "audienceUserIds": ["..."],
+    "createdAt": "iso-timestamp",
+    "updatedAt": "iso-timestamp"
+  }
+}
+```
 
-    Endpoint: POST /campaigns
+---
 
-    Goal: Create a new segment and immediately initiate a campaign for that segment.
+## 4. Campaigns
 
-Sample Payload:
+### 4.1. Launch Campaign with Segment
 
+* **Endpoint**: `POST /campaigns`
+* **Purpose**: Generates a new segment and associates it with a campaign.
+
+```json
 {
   "campaignName": "Welcome New Users Q2",
   "message": "Hello {{name}}, welcome to our platform! Enjoy 10% off your first order.",
@@ -262,43 +293,105 @@ Sample Payload:
     "groups": [
       {
         "conditions": [
-          { "field": "userCreatedAt", "operator": "newerThanDays", "value": 14 }
+          {"field": "userCreatedAt", "operator": "newerThanDays", "value": 14}
         ]
       }
     ]
   }
 }
+```
 
-Expected Result:
+* **Success (201 Created)**:
 
+```json
 {
   "success": true,
-  "message": "Segment and Campaign created. Campaign status: PROCESSING.",
+  "message": "Segment \"New Users - Last 14 Days\" and Campaign \"Welcome New Users Q2\" created successfully. Campaign status: PROCESSING.",
   "data": {
-    "segment": { /* Segment info */ },
+    "segment": {
+      "id": "generated-segment-uuid",
+      "name": "New Users - Last 14 Days",
+      "rules": { /* rules */ },
+      "audienceUserIds": ["..."],
+      "createdAt": "iso-timestamp",
+      "updatedAt": "iso-timestamp"
+    },
     "campaign": {
-      "id": "campaign-uuid",
+      "id": "generated-campaign-uuid",
       "name": "Welcome New Users Q2",
       "messageTemplate": "Hello {{name}}, welcome to our platform! Enjoy 10% off your first order.",
       "status": "PROCESSING",
       "audienceSize": 120,
       "sentCount": 0,
       "failedCount": 0,
-      "createdAt": "timestamp",
-      "updatedAt": "timestamp",
-      "segmentId": "segment-uuid"
+      "createdAt": "iso-timestamp",
+      "updatedAt": "iso-timestamp",
+      "segmentId": "generated-segment-uuid"
     }
   }
 }
+```
 
- Campaign Listing
+### 4.2. List Campaigns
 
-    Route: GET /campaigns
+* **Endpoint**: `GET /campaigns`
 
-    Output: Full list of campaigns, including associated segment metadata.
+* **Purpose**: Lists all campaigns with segment metadata.
 
- Campaign Details by ID
+* **Success (200 OK)**:
 
-    Endpoint: GET /campaigns/:campaignId
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "campaign-uuid-1",
+      "name": "Welcome New Users Q2",
+      "messageTemplate": "Hello {{name}}, ...",
+      "status": "PROCESSING",
+      "audienceSize": 120,
+      "sentCount": 0,
+      "failedCount": 0,
+      "createdAt": "iso-timestamp",
+      "updatedAt": "iso-timestamp",
+      "segmentId": "segment-uuid-associated",
+      "segmentName": "New Users - Last 14 Days",
+      "segment": {
+        "name": "New Users - Last 14 Days"
+      }
+    }
+  ]
+}
+```
 
-    Purpose: Provides detailed data for a given campaign including the linked segment.
+### 4.3. Get Campaign Info
+
+* **Endpoint**: `GET /campaigns/:campaignId`
+
+* **Purpose**: Retrieve details of a specific campaign and its segment.
+
+* **Success (200 OK)**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "campaign-uuid-1",
+    "name": "Welcome New Users Q2",
+    "messageTemplate": "Hello {{name}}, ...",
+    "status": "PROCESSING",
+    "audienceSize": 120,
+    "sentCount": 0,
+    "failedCount": 0,
+    "createdAt": "iso-timestamp",
+    "updatedAt": "iso-timestamp",
+    "segmentId": "segment-uuid-associated",
+    "segment": {
+      "id": "segment-uuid-associated",
+      "name": "New Users - Last 14 Days",
+      "rules": { /* rules */ },
+      "audienceUserIds": ["..."]
+    }
+  }
+}
+```
